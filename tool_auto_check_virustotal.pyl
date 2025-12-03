@@ -1,0 +1,57 @@
+import vt
+import time 
+# khai bao
+PATH_FILE_URL = "C:\\Users\\DaKL\\Downloads\\input.txt"
+API_KEY = "23804a7b88aa86d3f1de229623f6db7a1bdb07dbd7f27e5ca3f8876e9c6c6593"
+# end khai bao
+def check_virustotal(url):
+    try:
+        client = vt.Client(API_KEY, timeout=60)
+        analysis_report = client.get_object(f"/urls/{vt.url_id(url)}")
+        stats = analysis_report.last_analysis_stats
+        malicious = stats.get("malicious", 0)
+
+        if malicious <= 10:
+            print(f"url: {url} la url can kiem tra lai : {malicious}")
+            rescan = client.scan_url(url)
+            analysis_id = rescan.id
+            time.sleep(40)
+
+            analysis_report_re = client.get_object(f"/analyses/{analysis_id}")
+            stats_re = analysis_report_re.stats
+            malicious_re = stats_re.get("malicious", 0)
+            if(malicious_re < 5):
+                return False
+            return True
+        else:
+            print(f"url: {url} la url nguy hiem : {malicious}")
+            return True
+    except vt.error.APIError as e:
+        print(f"LỖI API: {e}")
+    except Exception as e:
+        print("LỖI KẾT NỐI hoặc LỖI KHÁC:")
+        print(e)
+    finally:
+        if 'client' in locals():
+            client.close()
+
+def read_lines_from_txt(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                content = line.strip()
+
+                if content: 
+                    if check_virustotal(content):
+                        print("{content} nguy hiem")
+                    else: 
+                        print("{content} xem xet lai")
+                    time.sleep(40)
+    except FileNotFoundError:
+        print(f"Lỗi: Không tìm thấy file tại đường dẫn: {file_path}")
+    except Exception as e:
+        print(f"Lỗi xảy ra trong quá trình đọc file: {e}")
+if __name__ == "__main__":
+    read_lines_from_txt(PATH_FILE_URL)
+
+#_________________1337DAKL_______________
